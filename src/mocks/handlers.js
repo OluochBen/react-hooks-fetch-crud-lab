@@ -1,34 +1,61 @@
-import { rest } from "msw";
-import { data } from "./data";
+import { rest } from 'msw';
 
-let questions = data;
+// Initial test data
+const initialQuestions = [
+  {
+    id: 1,
+    prompt: "lorem testum 1",
+    answers: ["answer 1", "answer 2", "answer 3", "answer 4"],
+    correctIndex: 0
+  },
+  {
+    id: 2,
+    prompt: "lorem testum 2",
+    answers: ["answer 1", "answer 2", "answer 3", "answer 4"],
+    correctIndex: 1
+  }
+];
+
+let questions = [...initialQuestions];
 
 export const handlers = [
-  rest.get("http://localhost:4000/questions", (req, res, ctx) => {
+  // GET all questions
+  rest.get('http://localhost:4000/questions', (req, res, ctx) => {
     return res(ctx.json(questions));
   }),
-  rest.post("http://localhost:4000/questions", (req, res, ctx) => {
-    const id = questions[questions.length - 1]?.id + 1 || 1;
-    const question = { id, ...req.body };
-    questions.push(question);
-    return res(ctx.json(question));
+
+  // POST new question
+  rest.post('http://localhost:4000/questions', (req, res, ctx) => {
+    const newQuestion = {
+      id: Math.max(...questions.map(q => q.id)) + 1,
+      prompt: req.body.prompt,
+      answers: req.body.answers,
+      correctIndex: parseInt(req.body.correctIndex)
+    };
+    questions.push(newQuestion);
+    return res(ctx.json(newQuestion));
   }),
-  rest.delete("http://localhost:4000/questions/:id", (req, res, ctx) => {
+
+  // DELETE question
+  rest.delete('http://localhost:4000/questions/:id', (req, res, ctx) => {
     const { id } = req.params;
-    if (isNaN(parseInt(id))) {
-      return res(ctx.status(404), ctx.json({ message: "Invalid ID" }));
-    }
-    questions = questions.filter((q) => q.id !== parseInt(id));
-    return res(ctx.json({}));
+    questions = questions.filter(q => q.id !== parseInt(id));
+    return res(ctx.status(200));
   }),
-  rest.patch("http://localhost:4000/questions/:id", (req, res, ctx) => {
+
+  // PATCH (update) question
+  rest.patch('http://localhost:4000/questions/:id', (req, res, ctx) => {
     const { id } = req.params;
-    const { correctIndex } = req.body;
-    const question = questions.find((q) => q.id === parseInt(id));
-    if (!question) {
-      return res(ctx.status(404), ctx.json({ message: "Invalid ID" }));
+    const question = questions.find(q => q.id === parseInt(id));
+    if (question) {
+      question.correctIndex = parseInt(req.body.correctIndex);
     }
-    question.correctIndex = correctIndex;
-    return res(ctx.json(question));
+    return res(ctx.json(question || {}));
   }),
+
+  // Reset endpoint for tests
+  rest.get('http://localhost:4000/reset', (req, res, ctx) => {
+    questions = [...initialQuestions];
+    return res(ctx.status(200));
+  })
 ];

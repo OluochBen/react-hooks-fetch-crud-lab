@@ -10,6 +10,7 @@ function QuestionForm({ onAddQuestion }) {
     correctIndex: 0,
   });
 
+  // Track whether component is still mounted
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -20,8 +21,8 @@ function QuestionForm({ onAddQuestion }) {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((prevFormData) => ({
+      ...prevFormData,
       [name]: value,
     }));
   }
@@ -46,9 +47,10 @@ function QuestionForm({ onAddQuestion }) {
       body: JSON.stringify(newQuestion),
     })
       .then((res) => res.json())
-      .then((savedQuestion) => {
+      .then((newQuestion) => {
+        onAddQuestion(newQuestion);
+        // Only update state if still mounted
         if (isMounted.current) {
-          onAddQuestion(savedQuestion);
           setFormData({
             prompt: "",
             answer1: "",
@@ -117,10 +119,10 @@ function QuestionForm({ onAddQuestion }) {
             value={formData.correctIndex}
             onChange={handleChange}
           >
-            <option value="0">{formData.answer1}</option>
-            <option value="1">{formData.answer2}</option>
-            <option value="2">{formData.answer3}</option>
-            <option value="3">{formData.answer4}</option>
+            <option value="0">{formData.answer1 || "Answer 1"}</option>
+            <option value="1">{formData.answer2 || "Answer 2"}</option>
+            <option value="2">{formData.answer3 || "Answer 3"}</option>
+            <option value="3">{formData.answer4 || "Answer 4"}</option>
           </select>
         </label>
         <button type="submit">Add Question</button>
